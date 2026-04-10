@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LinkedIn Industry Categorizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --navy:#0d1b2e;--navy2:#142338;--blue:#1e6fff;--teal:#00c6a7;
+  --light:#e8eef8;--muted:#8896b0;--card:#162033;--border:#1e3050;
+  --radius:14px;--font:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--navy);color:var(--light);font-family:var(--font);min-height:100vh;}
+header{width:100%;background:linear-gradient(135deg,#0d1b2e 0%,#0a2540 100%);border-bottom:1px solid var(--border);padding:28px 40px;display:flex;align-items:center;gap:18px;}
+.logo-badge{width:44px;height:44px;background:var(--blue);border-radius:12px;display:grid;place-items:center;font-size:22px;flex-shrink:0;}
+header h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;}
+header p{font-size:0.82rem;color:var(--muted);margin-top:2px;font-weight:400;font-family:var(--mono);}
+main{width:100%;max-width:960px;padding:40px 24px 80px;margin:0 auto;display:flex;flex-direction:column;gap:28px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;}
+.card-title{font-size:0.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:16px;}
+.dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+.dropzone:hover,.dropzone.drag-over{border-color:var(--blue);background:rgba(30,111,255,.06);}
+.dropzone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.dropzone-icon{font-size:2.4rem;margin-bottom:12px;}
+.dropzone h3{font-size:1.05rem;font-weight:700;margin-bottom:6px;}
+.dropzone p{font-size:0.82rem;color:var(--muted);}
+label{font-size:0.78rem;color:var(--muted);font-weight:600;letter-spacing:.5px;}
+input[type="text"],input[type="number"]{background:var(--navy2);border:1px solid var(--border);border-radius:8px;color:var(--light);font-family:var(--mono);font-size:0.85rem;padding:10px 14px;outline:none;transition:border-color .2s;}
+input[type="text"]:focus,input[type="number"]:focus{border-color:var(--blue);}
+input[type="text"]::placeholder{color:var(--muted);}
+.config-row{display:flex;gap:16px;flex-wrap:wrap;}
+.config-field{flex:1;min-width:180px;display:flex;flex-direction:column;gap:6px;}
+.btn-run{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:14px 36px;font-family:var(--font);font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;gap:10px;align-self:flex-start;}
+.btn-run:hover{opacity:.88;}
+.btn-run:active{transform:scale(.97);}
+.btn-run:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.progress-wrap{display:none;flex-direction:column;gap:10px;}
+.progress-wrap.visible{display:flex;}
+.progress-bar-bg{background:var(--navy2);border-radius:99px;height:8px;overflow:hidden;}
+.progress-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--teal));transition:width .4s ease;width:0%;}
+.progress-stats{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);font-family:var(--mono);}
+.log-box{background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-family:var(--mono);font-size:0.78rem;color:var(--muted);max-height:160px;overflow-y:auto;line-height:1.7;}
+.log-line.ok{color:var(--teal);}
+.log-line.error{color:#ff6b6b;}
+.results-wrap{display:none;}
+.results-wrap.visible{display:block;}
+.results-meta{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px;}
+.stat-pill{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:0.82rem;color:var(--light);}
+.stat-pill span{color:var(--teal);font-weight:700;font-size:1rem;}
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:0.83rem;}
+thead tr{background:var(--navy2);}
+thead th{padding:12px 16px;text-align:left;font-size:0.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,.03);}
+tbody td{padding:11px 16px;color:var(--light);font-family:var(--mono);}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:0.72rem;font-weight:600;background:rgba(0,198,167,.15);color:var(--teal);border:1px solid rgba(0,198,167,.3);}
+.btn-download{background:var(--teal);color:var(--navy);border:none;border-radius:10px;padding:13px 30px;font-family:var(--font);font-size:0.95rem;font-weight:700;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;gap:8px;}
+.btn-download:hover{opacity:.88;}
+.key-note{font-size:0.78rem;color:var(--muted);font-family:var(--mono);margin-top:6px;line-height:1.5;}
+.key-note a{color:var(--blue);text-decoration:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+.spinner.visible{display:block;}
+.info-box{background:rgba(0,198,167,.08);border:1px solid rgba(0,198,167,.2);border-radius:10px;padding:12px 16px;font-size:0.8rem;color:var(--teal);font-family:var(--mono);margin-top:10px;line-height:1.6;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-badge">🔗</div>
+  <div>
+    <h1>LinkedIn Industry Categorizer</h1>
+    <p>AI-powered industry classification · 5,934 contacts ready</p>
+  </div>
+</header>
+<main>
+
+  <!-- API Key -->
+  <div class="card">
+    <div class="card-title">01 — Anthropic API Key</div>
+    <div class="config-field">
+      <label for="apiKey">API Key</label>
+      <input type="text" id="apiKey" placeholder="sk-ant-api03-…" autocomplete="off"/>
+    </div>
+    <p class="key-note">Your key stays in your browser only. Get one free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.</p>
+  </div>
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-title">02 — Upload Your Connections.csv</div>
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept=".csv"/>
+      <div class="dropzone-icon">📂</div>
+      <h3>Drop Connections.csv here or click to browse</h3>
+      <p>The CSV file from your LinkedIn data export ZIP</p>
+    </div>
+    <div id="fileStatus" style="margin-top:12px;font-size:.82rem;color:var(--teal);font-family:var(--mono);"></div>
+    <div class="info-box" id="csvInfo" style="display:none;"></div>
+  </div>
+
+  <!-- Config -->
+  <div class="card">
+    <div class="card-title">03 — Settings</div>
+    <div class="config-row">
+      <div class="config-field">
+        <label for="batchSize">Contacts per API call</label>
+        <input type="number" id="batchSize" value="20" min="1" max="40"/>
+      </div>
+      <div class="config-field">
+        <label for="maxRows">Max to process (0 = all)</label>
+        <input type="number" id="maxRows" value="0" min="0"/>
+      </div>
+    </div>
+    <p class="key-note" style="margin-top:14px;">Processing all 5,934 contacts will take ~8–10 minutes and use ~300 API calls. Cost is roughly $0.30–0.50 total.</p>
+  </div>
+
+  <!-- Run -->
+  <div class="card">
+    <div class="card-title">04 — Run</div>
+    <button class="btn-run" id="runBtn" disabled>
+      <div class="spinner" id="spinner"></div>
+      <span id="btnLabel">▶ Categorize Contacts</span>
+    </button>
+    <div class="progress-wrap" id="progressWrap" style="margin-top:24px;">
+      <div class="progress-stats">
+        <span id="progressText">Processing…</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="log-box" id="logBox"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card results-wrap" id="resultsWrap">
+    <div class="card-title">05 — Results</div>
+    <div class="results-meta" id="resultsMeta"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      <button class="btn-download" id="downloadBtn">⬇ Download Categorized CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>First Name</th><th>Last Name</th><th>Company</th><th>Position</th><th>Industry</th></tr></thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+    <p style="font-size:.78rem;color:var(--muted);font-family:var(--mono);margin-top:14px;">Showing first 100 rows. Download contains all contacts.</p>
+  </div>
+
+</main>
+<script>
+let parsedRows = [];
+let resultRows = [];
+
+// ── CSV Parser — handles LinkedIn's 3-row header ──────────────
+function parseLinkedInCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+
+  // LinkedIn adds 3 lines of notes before the real header
+  // Find the real header line (contains "First Name")
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(10, lines.length); i++) {
+    if (lines[i].includes('First Name')) { headerIdx = i; break; }
+  }
+
+  const headers = splitCSV(lines[headerIdx]).map(h => h.replace(/^"|"$/g,'').trim());
+  const rows = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = splitCSV(lines[i]);
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || '').replace(/^"|"$/g,'').trim(); });
+    if (obj['First Name'] || obj['Company']) rows.push(obj);
+  }
+  return rows;
+}
+
+function splitCSV(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQ = !inQ; }
+    else if (line[i] === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += line[i]; }
+  }
+  result.push(cur);
+  return result;
+}
+
+// ── File handling ─────────────────────────────────────────────
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    parsedRows = parseLinkedInCSV(e.target.result);
+    document.getElementById('fileStatus').textContent = `✓ Loaded ${parsedRows.length.toLocaleString()} contacts from "${file.name}"`;
+    const info = document.getElementById('csvInfo');
+    info.style.display = 'block';
+    const sample = parsedRows[0] || {};
+    info.textContent = `Columns found: ${Object.keys(sample).join(' · ')}\nFirst contact: ${sample['First Name']} ${sample['Last Name']} — ${sample['Company']}`;
+    checkReady();
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById('fileInput').addEventListener('change', e => handleFile(e.target.files[0]));
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
+document.getElementById('apiKey').addEventListener('input', checkReady);
+
+function checkReady() {
+  const hasKey  = document.getElementById('apiKey').value.trim().startsWith('sk-');
+  const hasFile = parsedRows.length > 0;
+  document.getElementById('runBtn').disabled = !(hasKey && hasFile);
+}
+
+// ── Logger ────────────────────────────────────────────────────
+const logBox = document.getElementById('logBox');
+function log(msg, type = 'info') {
+  const d = document.createElement('div');
+  d.className = `log-line ${type}`;
+  d.textContent = `[${new Date().toLocaleTimeString()}]  ${msg}`;
+  logBox.appendChild(d);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function setProgress(done, total) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent  = pct + '%';
+  document.getElementById('progressText').textContent = `Processed ${done.toLocaleString()} / ${total.toLocaleString()} contacts`;
+}
+
+// ── Main run ──────────────────────────────────────────────────
+document.getElementById('runBtn').addEventListener('click', run);
+
+async function run() {
+  const apiKey    = document.getElementById('apiKey').value.trim();
+  const batchSize = parseInt(document.getElementById('batchSize').value) || 20;
+  const maxRows   = parseInt(document.getElementById('maxRows').value) || 0;
+  const rows      = maxRows > 0 ? parsedRows.slice(0, maxRows) : parsedRows;
+
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('spinner').classList.add('visible');
+  document.getElementById('btnLabel').textContent = 'Running…';
+  document.getElementById('progressWrap').classList.add('visible');
+  document.getElementById('resultsWrap').classList.remove('visible');
+  logBox.innerHTML = '';
+  resultRows = [];
+
+  log(`Starting categorization of ${rows.length.toLocaleString()} contacts in batches of ${batchSize}…`);
+  setProgress(0, rows.length);
+
+  const batches = [];
+  for (let i = 0; i < rows.length; i += batchSize) batches.push(rows.slice(i, i + batchSize));
+
+  for (let b = 0; b < batches.length; b++) {
+    const batch = batches[b];
+    log(`Batch ${b+1}/${batches.length} — contacts ${b*batchSize+1}–${b*batchSize+batch.length}…`);
+    try {
+      const industries = await categorizeBatch(batch, apiKey);
+      batch.forEach((row, i) => resultRows.push({ ...row, Industry: industries[i] || 'Unknown' }));
+      log(`Batch ${b+1} done`, 'ok');
+    } catch (err) {
+      log(`Batch ${b+1} failed: ${err.message}`, 'error');
+      batch.forEach(row => resultRows.push({ ...row, Industry: 'Unknown' }));
+    }
+    setProgress(resultRows.length, rows.length);
+    if (b < batches.length - 1) await sleep(400);
+  }
+
+  log(`All done! ${resultRows.length.toLocaleString()} contacts categorized.`, 'ok');
+  document.getElementById('spinner').classList.remove('visible');
+  document.getElementById('btnLabel').textContent = '▶ Categorize Contacts';
+  document.getElementById('runBtn').disabled = false;
+  showResults();
+}
+
+async function categorizeBatch(batch, apiKey) {
+  const contactList = batch.map((r, i) =>
+    `${i+1}. Name: ${r['First Name']||''} ${r['Last Name']||''} | Company: ${r['Company']||''} | Title: ${r['Position']||''}`
+  ).join('\n');
+
+  const prompt = `You are an expert business analyst. For each contact below, determine the single best industry category.
+
+Choose from: Technology, Software/SaaS, AI/Machine Learning, Fintech, Healthcare, Biotech/Pharma, Venture Capital, Private Equity, Investment Banking, Consulting, Legal, Marketing/Advertising, Media/Entertainment, E-commerce, Retail, Real Estate, Education, Government, Non-Profit, Manufacturing, Energy, Sustainability, Logistics, Hospitality, Food & Beverage, Sports, Athletics/Wellness, Music, Dance, Fashion, Design, Accounting/Finance, Insurance, Telecommunications, Community Development, Housing/Social Services
+
+Contacts:
+${contactList}
+
+Respond ONLY with a JSON array of exactly ${batch.length} strings. No explanation, no markdown, no preamble.
+Example: ["Technology","Venture Capital","Healthcare"]`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+  });
+
+  if (!resp.ok) throw new Error(`API ${resp.status}: ${(await resp.text()).slice(0,200)}`);
+  const data = await resp.json();
+  const raw  = data.content.map(b => b.text || '').join('');
+  const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+  if (!Array.isArray(parsed)) throw new Error('API did not return an array');
+  return parsed;
+}
+
+// ── Results ───────────────────────────────────────────────────
+function showResults() {
+  const wrap = document.getElementById('resultsWrap');
+  wrap.classList.add('visible');
+
+  const industryCount = {};
+  resultRows.forEach(r => { industryCount[r.Industry] = (industryCount[r.Industry]||0)+1; });
+  const top = Object.entries(industryCount).sort((a,b)=>b[1]-a[1]).slice(0,4);
+
+  document.getElementById('resultsMeta').innerHTML = `
+    <div class="stat-pill">Total <span>${resultRows.length.toLocaleString()}</span></div>
+    <div class="stat-pill">Industries <span>${Object.keys(industryCount).length}</span></div>
+    ${top.map(([k,v])=>`<div class="stat-pill">${k} <span>${v}</span></div>`).join('')}
+  `;
+
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = '';
+  resultRows.slice(0,100).forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r['First Name']||''}</td><td>${r['Last Name']||''}</td><td>${r['Company']||''}</td><td>${r['Position']||''}</td><td><span class="badge">${r.Industry}</span></td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('downloadBtn').onclick = downloadCSV;
+}
+
+function downloadCSV() {
+  if (!resultRows.length) return;
+
+  // Output columns matching your CRM sheet exactly
+  const lines = [
+    '"First Name","Last Name","Company","Position","Industry","Email Address","LinkedIn URL","Connected On"',
+    ...resultRows.map(r => [
+      r['First Name']    || '',
+      r['Last Name']     || '',
+      r['Company']       || '',
+      r['Position']      || '',
+      r['Industry']      || '',
+      r['Email Address'] || '',
+      r['URL']           || '',
+      r['Connected On']  || '',
+    ].map(v => `"${v.replace(/"/g,'""')}"`).join(','))
+  ];
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'LinkedIn_Contacts_Categorized.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
