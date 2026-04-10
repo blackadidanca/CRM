@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CRM Saver"/>
+<meta name="theme-color" content="#0a0f1e"/>
+<title>CRM Saver</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#0a0f1e;--surface:#111827;--card:#151f35;--border:#1e2d4a;
+  --blue:#3b6df8;--blue-light:#6b93fb;--teal:#00d4aa;
+  --red:#f87171;--text:#f0f4ff;--muted:#6b7fa3;
+  --font:'DM Sans',sans-serif;--display:'Syne',sans-serif;
+  --safe-top:env(safe-area-inset-top);--safe-bottom:env(safe-area-inset-bottom);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
+body{display:flex;flex-direction:column;min-height:100vh;min-height:-webkit-fill-available;}
+.safe-top{height:calc(var(--safe-top) + 12px);background:var(--bg);}
+header{background:var(--bg);padding:0 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+.logo{width:38px;height:38px;background:var(--blue);border-radius:12px;display:grid;place-items:center;font-size:18px;flex-shrink:0;}
+.header-left{display:flex;align-items:center;gap:12px;}
+.header-title{font-family:var(--display);font-size:18px;font-weight:800;letter-spacing:-0.5px;}
+.header-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);}
+
+.screen{display:none;flex:1;overflow-y:auto;padding:20px 20px calc(var(--safe-bottom) + 110px);}
+.screen.active{display:block;}
+
+.stats-bar{display:flex;gap:10px;margin-bottom:20px;}
+.stat-pill{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.stat-pill .num{font-family:var(--display);font-size:22px;font-weight:800;color:var(--teal);}
+.stat-pill .lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+
+.save-hero{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:16px;}
+.save-hero h2{font-family:var(--display);font-size:20px;font-weight:800;margin-bottom:4px;}
+.save-hero p{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+.url-hint{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--muted);line-height:1.7;}
+.url-hint strong{color:var(--text);}
+
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:14px;}
+.form-card h3{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:6px;}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:15px;padding:13px 16px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--blue);}
+.field input::placeholder{color:var(--muted);}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7fa3' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+
+.btn{width:100%;padding:16px;border:none;border-radius:14px;font-family:var(--font);font-size:16px;font-weight:600;cursor:pointer;transition:transform .1s,opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn:active{transform:scale(0.97);}
+.btn-teal{background:var(--teal);color:#0a0f1e;font-weight:700;}
+.btn-ghost{background:var(--surface);color:var(--muted);border:1px solid var(--border);margin-top:10px;}
+.btn:disabled{opacity:0.4;pointer-events:none;}
+
+.alert{padding:12px 16px;border-radius:12px;font-size:13px;font-weight:500;line-height:1.5;margin-top:14px;display:none;}
+.alert.show{display:block;}
+.alert-success{background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);color:var(--teal);}
+.alert-error{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--red);}
+.alert-info{background:rgba(59,109,248,0.1);border:1px solid rgba(59,109,248,0.3);color:var(--blue-light);}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 20px calc(var(--safe-bottom) + 8px);display:flex;gap:10px;z-index:100;}
+.nav-btn{flex:1;padding:12px;border:none;border-radius:12px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:transform .1s;background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.nav-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.nav-btn:active{transform:scale(0.96);}
+
+/* install banner */
+.install-card{background:linear-gradient(135deg,#1a2744 0%,#0f1f3d 100%);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:20px;}
+.install-card h3{font-size:14px;font-weight:700;margin-bottom:8px;}
+.install-card p{font-size:13px;color:var(--muted);line-height:1.6;}
+.install-steps{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.istep{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.5;}
+.istep-num{width:22px;height:22px;background:var(--blue);border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px;}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.25);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:none;}
+.spinner.show{display:block;}
+
+/* success flash */
+@keyframes successPop{0%{transform:scale(0.95)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+.success-pop{animation:successPop .3s ease;}
+</style>
+</head>
+<body>
+
+<div class="safe-top"></div>
+
+<header>
+  <div class="header-left">
+    <div class="logo">🔗</div>
+    <div>
+      <div class="header-title">CRM Saver</div>
+      <div class="header-sub">Saves to your Google Sheet</div>
+    </div>
+  </div>
+  <div class="conn-dot" title="Connected"></div>
+</header>
+
+<!-- SAVE SCREEN -->
+<div class="screen active" id="screen-save">
+
+  <div class="stats-bar" style="margin-top:4px;">
+    <div class="stat-pill">
+      <div class="num" id="statToday">0</div>
+      <div class="lbl">Saved today</div>
+    </div>
+    <div class="stat-pill">
+      <div class="num" id="statTotal">0</div>
+      <div class="lbl">All time</div>
+    </div>
+  </div>
+
+  <!-- Install to home screen prompt — only shows in browser, hides when standalone -->
+  <div class="install-card" id="installCard">
+    <h3>📱 Add to your Home Screen</h3>
+    <p>Make this a one-tap app on your iPhone — no App Store needed.</p>
+    <div class="install-steps">
+      <div class="istep"><div class="istep-num">1</div><span>Tap the <strong style="color:var(--text)">Share button</strong> at the bottom of Safari (box with arrow pointing up)</span></div>
+      <div class="istep"><div class="istep-num">2</div><span>Scroll down and tap <strong style="color:var(--text)">"Add to Home Screen"</strong></span></div>
+      <div class="istep"><div class="istep-num">3</div><span>Tap <strong style="color:var(--text)">Add</strong> — it appears on your home screen like a real app</span></div>
+    </div>
+  </div>
+
+  <div class="save-hero">
+    <h2>Save a Contact</h2>
+    <p>Fill in the details below and tap Save. Everything goes straight to your CRM Google Sheet.</p>
+    <div class="url-hint">
+      📋 On LinkedIn: tap the person's name → tap <strong>More (•••)</strong> → <strong>Copy Link</strong> → paste it in the URL field below
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>Contact Details</h3>
+    <div class="field">
+      <label>LinkedIn URL</label>
+      <input type="url" id="fUrl" placeholder="linkedin.com/in/..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/>
+    </div>
+    <div class="field">
+      <label>First Name</label>
+      <input type="text" id="fFirst" placeholder="Jane" autocorrect="off"/>
+    </div>
+    <div class="field">
+      <label>Last Name</label>
+      <input type="text" id="fLast" placeholder="Smith" autocorrect="off"/>
+    </div>
+    <div class="field">
+      <label>Company</label>
+      <input type="text" id="fCompany" placeholder="Google" autocorrect="off"/>
+    </div>
+    <div class="field">
+      <label>Job Title</label>
+      <input type="text" id="fTitle" placeholder="Senior Product Manager" autocorrect="off"/>
+    </div>
+    <div class="field">
+      <label>Industry</label>
+      <input type="text" id="fIndustry" placeholder="Technology" autocorrect="off"/>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="fEmail" placeholder="jane@company.com" autocorrect="off" autocapitalize="none"/>
+    </div>
+    <div class="field">
+      <label>Priority</label>
+      <select id="fPriority">
+        <option value="High">🔴 High</option>
+        <option value="Medium" selected>🟡 Medium</option>
+        <option value="Low">🟢 Low</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <input type="text" id="fNotes" placeholder="How you met, what to follow up on…"/>
+    </div>
+  </div>
+
+  <div id="saveAlert" class="alert"></div>
+  <button class="btn btn-teal" id="btnSave" onclick="saveContact()">
+    <div class="spinner" id="saveSpinner"></div>
+    <span id="saveBtnLabel">⚡ Save to CRM</span>
+  </button>
+  <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
+
+</div>
+
+<!-- HOW TO USE SCREEN -->
+<div class="screen" id="screen-help">
+  <div style="padding-top:8px;">
+    <div style="font-family:var(--display);font-size:22px;font-weight:800;margin-bottom:6px;">How to use</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:24px;">Everything you need to know to get contacts into your CRM from your iPhone.</p>
+
+    <div class="form-card" style="margin-bottom:14px;">
+      <h3>Saving a contact</h3>
+      <div class="istep" style="margin-bottom:10px;"><div class="istep-num">1</div><span style="font-size:13px;color:var(--muted);line-height:1.5;">Open LinkedIn and go to the person's profile</span></div>
+      <div class="istep" style="margin-bottom:10px;"><div class="istep-num">2</div><span style="font-size:13px;color:var(--muted);line-height:1.5;">Tap <strong style="color:var(--text)">More (•••)</strong> → <strong style="color:var(--text)">Copy Link</strong></span></div>
+      <div class="istep" style="margin-bottom:10px;"><div class="istep-num">3</div><span style="font-size:13px;color:var(--muted);line-height:1.5;">Come back here, paste the URL, fill in their details</span></div>
+      <div class="istep"><div class="istep-num">4</div><span style="font-size:13px;color:var(--muted);line-height:1.5;">Tap <strong style="color:var(--teal)">Save to CRM</strong> — they appear in your Google Sheet instantly</span></div>
+    </div>
+
+    <div class="form-card" style="margin-bottom:14px;">
+      <h3>Your Google Sheet</h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">Every contact you save goes into your CRM sheet at:</p>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:11px;color:var(--blue-light);font-family:monospace;margin-top:10px;word-break:break-all;line-height:1.6;">docs.google.com/spreadsheets/d/<br/>1u8vpWiDciyC72Mg95Cw-BS9v9C94blqyooKm6plaJfY</div>
+    </div>
+
+    <div class="form-card">
+      <h3>Connected as</h3>
+      <p style="font-size:12px;color:var(--teal);font-family:monospace;line-height:1.6;word-break:break-all;">linkedin-crm@crm-linkedin-492804.iam.gserviceaccount.com</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5;">This app is pre-configured and ready to use. No login needed.</p>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" id="navSave" onclick="switchNav('save')">💾 Save Contact</button>
+  <button class="nav-btn" id="navHelp" onclick="switchNav('help')">❓ How to Use</button>
+</div>
+
+<script>
+// ── Pre-baked credentials — no setup needed ───────────────────────────────────
+const SHEET_ID  = '1u8vpWiDciyC72Mg95Cw-BS9v9C94blqyooKm6plaJfY';
+const SHEET_TAB = 'CRM';
+const CREDS = {
+  "type":"service_account",
+  "project_id":"crm-linkedin-492804",
+  "private_key_id":"1a392e324ef40f32cd25b336aa33b81802fe4e86",
+  "private_key":"-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCbBWyAhtsOKo1u\noIkRqhyOnOX3xr47gXYFO7m896QG1SrOl/RxArbFydtjp6So6X4NFRWmCfqtGI5E\nnEUTKc8z3fyTKxToyshj4SF6+leQKxffcj1mH+NceewkHlA6BBfZWrmPkfOErcyH\nCdsvq1az3cADjDXwXCdTFZj7VZR5luCaEnKfDV4KUcfJUzAzI2u/W7cSIxnCrTSz\n+xWNO6D9nemhQW7NScX2tFKO4mmHLfgF533f2ZA8Ca22cs/JrvXaG3BitYSgiKce\nko8NsefjcHqbK/O2V4KeKP/r97TWnnYm6RIe42qCnzYFKc0PB1bsU837JmCa2oNl\nEx5Nyd5bAgMBAAECggEADPmzvsBK5pEmPGvAfVOFR2SXlRk0BAwOglqg7dG2j4HZ\nLuimI61r+fsu21UFYcQFcnfg04CDVGi5Q8HmwDdgKgG7KeBRxDhw9Hc8E6yPlrgc\nq+3GeN1TbQKhgtZstaZxDpba8ErxnJnlhCoNiBxpye1WLJXYT/GOsxQcNXFQ16pp\nbscha8HR31nab0cBBgpToT0bkWAb75IMlfB0Mp647cpZ7BgG3rDXcJdo4A+17Mdt\nIt6cf/JN1gfVzspA39tcgp65iVZwhwO3XSs+5stsKCtLhhwCUnCAcxAgb/P6mPpx\n/W+gl/sACKV1H78vQrFjq8EiWAmECXUEP8IAKCls6QKBgQDMvLe6IyGv+6Yf+qFy\ns+hYh5TlTIci8aAT66eHWzgVFGo+BgzitTdiEfTOFw96QGSiUw2HKB8xUDnLNwUT\nI09vXKjRQhZ3VCw5Nzn5PLFOTY4xou8gVhfLgiB/KGJM9csYsUOEtwxrHKfWsX6o\naPDLxiphz9e68CQtOylGpHDs8wKBgQDB1gBKidEMq3FabMljGRqQAaFOlmtMNijF\nl8QXEhKwK/ir44s2WpaAqvTKhNEvbD6vx0Hgkh9TKxwgEizERmlm5XX5c41k66cO\n0m71n/w9G4tzBb8gl2VbzLF3W0iQUYcuJKvf4xw6zOraQ/M+4dcOs2nAHic7bWMp\n6MCpVeCC+QKBgQCBLvKeuFwhNp/zvajxPyNz+Niydj8uhVeEOkVS2vPgGSmQSTEI\nO1/euYXGJDbX5Jma8tyuU1qbOwu8ddL16GnO0qCSqSiT0sC0uWwTH4Cg776xAyXv\nOWN6PXlTwp+D//NOeUspCncDfulIRmaszMpjSX6kiQiOI8gv4gyBTnESkQKBgCQs\n0zsWA2zQ5kPQ/7i966Yql7c5/WZoyS0vSMphdhlo62zw9386YtI6lZriNMQb+IsH\nrfTCcJQt/H7DxZUP6wXoFx9qAF5wWGo8vbabmBCzflAGJ4hmmOUMC6bR43YDsS3c\nbDNJiHA05DO98Lywm1lEBJ11Qy8lGBevN52iyFbJAoGBALA3/qL9SMq6vovQmycy\nZFfYHT0Sy3/WssHJvU6WalGwAg6xKLWYMwXs69s+g77jabZkZSdKBU24FxBb9/+X\nzmeOpBvpSj4eFijxxi9lOrucbClCtuJQlD8GXq7VPXvmKl/EZlpiVII02ond1Qlf\n81drSUshEQIiC/c9GlBBKhmg\n-----END PRIVATE KEY-----\n",
+  "client_email":"linkedin-crm@crm-linkedin-492804.iam.gserviceaccount.com",
+  "client_id":"108931647045918715812",
+  "token_uri":"https://oauth2.googleapis.com/token"
+};
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function switchNav(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${tab}`).classList.add('active');
+  document.getElementById('navSave').classList.toggle('active', tab === 'save');
+  document.getElementById('navHelp').classList.toggle('active', tab === 'help');
+  window.scrollTo(0,0);
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `alert show alert-${type}`;
+}
+function hideAlert(id) { document.getElementById(id).className = 'alert'; }
+
+// ── JWT token ─────────────────────────────────────────────────────────────────
+async function getToken() {
+  const now = Math.floor(Date.now() / 1000);
+  const b64 = obj => btoa(JSON.stringify(obj)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const sigInput = `${b64({alg:'RS256',typ:'JWT'})}.${b64({
+    iss: CREDS.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: CREDS.token_uri,
+    exp: now + 3600,
+    iat: now,
+  })}`;
+  const pemBody = CREDS.private_key.replace(/-----[^-]+-----/g,'').replace(/\s+/g,'');
+  const keyBytes = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', keyBytes.buffer,
+    {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'}, false, ['sign']);
+  const sigBytes = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(sigInput));
+  const sig = btoa(String.fromCharCode(...new Uint8Array(sigBytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const resp = await fetch(CREDS.token_uri, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${sigInput}.${sig}`,
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error_description || data.error || 'Token failed');
+  return data.access_token;
+}
+
+// ── Save contact ──────────────────────────────────────────────────────────────
+async function saveContact() {
+  const firstName = document.getElementById('fFirst').value.trim();
+  const lastName  = document.getElementById('fLast').value.trim();
+  if (!firstName && !lastName) {
+    showAlert('saveAlert','Please enter at least a first or last name.','error');
+    return;
+  }
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  document.getElementById('saveSpinner').classList.add('show');
+  document.getElementById('saveBtnLabel').style.display = 'none';
+  hideAlert('saveAlert');
+
+  try {
+    const token = await getToken();
+    const row = [
+      firstName, lastName,
+      document.getElementById('fCompany').value.trim(),
+      document.getElementById('fTitle').value.trim(),
+      document.getElementById('fIndustry').value.trim(),
+      document.getElementById('fEmail').value.trim(),
+      document.getElementById('fUrl').value.trim(),
+      new Date().toISOString().split('T')[0],
+      'Not Started',
+      document.getElementById('fPriority').value,
+      '', document.getElementById('fNotes').value.trim(), '', '',
+    ];
+    const range = encodeURIComponent(`${SHEET_TAB}!A:N`);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const resp = await fetch(url, {
+      method:'POST',
+      headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+      body: JSON.stringify({values:[row]}),
+    });
+    const json = await resp.json();
+    if (!resp.ok) throw new Error(json.error?.message || `HTTP ${resp.status}`);
+
+    // Update stats
+    const todayStr = new Date().toDateString();
+    const lastDate = localStorage.getItem('lastSaveDate');
+    const prevToday = lastDate === todayStr ? (parseInt(localStorage.getItem('savedToday'))||0) : 0;
+    const prevTotal = parseInt(localStorage.getItem('savedTotal'))||0;
+    localStorage.setItem('savedToday', prevToday + 1);
+    localStorage.setItem('savedTotal', prevTotal + 1);
+    localStorage.setItem('lastSaveDate', todayStr);
+    updateStats();
+
+    showAlert('saveAlert', `✓ ${firstName} ${lastName} saved to your CRM!`, 'success');
+    btn.classList.add('success-pop');
+    setTimeout(() => { clearForm(true); btn.classList.remove('success-pop'); }, 2000);
+
+  } catch(err) {
+    let msg = err.message;
+    if (msg.includes('403') || msg.includes('PERMISSION_DENIED')) msg = 'Permission error — the sheet may need to be re-shared with the service account.';
+    if (msg.includes('404')) msg = 'Sheet not found — check the Sheet ID.';
+    showAlert('saveAlert', `Error: ${msg}`, 'error');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('saveSpinner').classList.remove('show');
+    document.getElementById('saveBtnLabel').style.display = '';
+  }
+}
+
+function clearForm(keepAlert) {
+  ['fUrl','fFirst','fLast','fCompany','fTitle','fIndustry','fEmail','fNotes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fPriority').value = 'Medium';
+  if (!keepAlert) hideAlert('saveAlert');
+}
+
+function updateStats() {
+  const todayStr = new Date().toDateString();
+  const lastDate = localStorage.getItem('lastSaveDate');
+  const today = lastDate === todayStr ? (parseInt(localStorage.getItem('savedToday'))||0) : 0;
+  document.getElementById('statToday').textContent = today;
+  document.getElementById('statTotal').textContent = parseInt(localStorage.getItem('savedTotal'))||0;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+if (window.navigator.standalone) {
+  document.getElementById('installCard').style.display = 'none';
+}
+updateStats();
+</script>
+</body>
+</html>
